@@ -6,22 +6,51 @@
   <title>Mako Shark Tracking Map</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    body {
+    /* Reset & Base */
+    * {
       margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
       font-family: 'Inter', sans-serif;
-      background-color: #0077be; /* ocean blue */
+      background-color: #e9f3f9;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    header {
+      background-color: #001f3f;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    /* Main Content */
+    main {
+      flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 2rem;
-      color: white;
+      padding: 1.5rem;
     }
 
     h1 {
-      margin-bottom: 1rem;
-      font-size: 2rem;
+      font-size: 1.75rem;
       text-align: center;
-      max-width: 800px;
+      margin-bottom: 1rem;
+      color: #1a202c;
     }
 
     iframe {
@@ -30,25 +59,49 @@
       height: 80vh;
       border: none;
       border-radius: 12px;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Footer */
+    footer {
+      background-color: #f8f8f8;
+      color: #555;
+      text-align: center;
+      padding: 1rem;
+      font-size: 0.9rem;
     }
 
     @media (max-width: 768px) {
       h1 {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
+        padding: 0 1rem;
       }
 
       iframe {
-        height: 70vh;
+        height: 65vh;
+      }
+
+      .logo {
+        font-size: 1.2rem;
       }
     }
   </style>
 </head>
 <body>
-  <h1>Mako Tracking Map<br>by the Montauk Shark Lab</h1>
-  <iframe 
-    src="https://my.wildlifecomputers.com/data/map/?id=685a059a196c4d0a280bcf7a" 
-    allowfullscreen>
-  </iframe>
+  <header>
+    <div class="logo">Montauk Shark Lab</div>
+  </header>
+
+  <main>
+    <h1>Mako Shark Tracking Map<br>Presented by the Montauk Shark Lab</h1>
+    <iframe 
+      src="https://my.wildlifecomputers.com/data/map/?id=685a059a196c4d0a280bcf7a" 
+      allowfullscreen>
+    </iframe>
+  </main>
+
+  <footer>
+    Tracking data provided by Wildlife Computers | Site by Montauk Shark Lab
+  </footer>
 </body>
 </html>
