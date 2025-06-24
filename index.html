@@ -1,30 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Live Wildlife Map</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shark Tracking Map</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
   <style>
     body {
       margin: 0;
-      padding: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: #f0f4f8;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
-      height: 100vh;
-      background-color: #f2f2f2;
+      padding: 2rem;
     }
+
+    h1 {
+      margin-bottom: 1rem;
+      font-size: 2rem;
+      color: #1a202c;
+    }
+
     iframe {
-      border: 0;
-      width: 90vw;
-      height: 90vh;
+      width: 100%;
+      max-width: 1000px;
+      height: 80vh;
+      border: none;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 1.5rem;
+        text-align: center;
+      }
+
+      iframe {
+        height: 70vh;
+      }
     }
   </style>
 </head>
 <body>
+  <h1>Live Shark Tracking Map</h1>
   <iframe 
     src="https://my.wildlifecomputers.com/data/map/?id=685a059a196c4d0a280bcf7a" 
-    frameborder="0" 
     allowfullscreen>
   </iframe>
 </body>
