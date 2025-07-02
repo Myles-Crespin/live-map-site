@@ -69,7 +69,7 @@
     }).addTo(map);
 
     // Load KMZ file
-    omnivore.kml('doc.kml')
+    omnivore.kml('sharks-export.kml')
       .on('ready', function() {
         this.eachLayer(function(layer) {
           const rawName = layer.feature.properties.name || "";
