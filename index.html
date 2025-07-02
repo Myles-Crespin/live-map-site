@@ -2,30 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Mako Shark Tracker</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <title>Mako Shark Tracking Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
   <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
+      height: 100vh;
       display: flex;
       flex-direction: column;
-      height: 100vh;
     }
-
     header {
       background: #001f3f;
       color: white;
       padding: 1rem 2rem;
-      font-size: 1.25rem;
       font-weight: bold;
+      font-size: 1.25rem;
     }
-
     #map {
       flex: 1;
     }
-
     footer {
       text-align: center;
       padding: 1rem;
@@ -37,56 +37,36 @@
 <body>
   <header>Mako Shark Tracking Map – Montauk Shark Lab</header>
   <div id="map"></div>
-  <footer>Tracking data provided by Wildlife Computers | Site by Montauk Shark Lab</footer>
+  <footer>Tracking data by Wildlife Computers</footer>
 
-  <!-- Leaflet -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <!-- Omnivore plugin to read KMZ/KML -->
   <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
-
   <script>
-    // Placeholder shark info – you can edit these later
+    // Sample shark info - update with real data later
     const sharkInfo = {
-      "20U0741": {
-        nickname: "Bolt",
-        species: "Shortfin Mako",
-        size: "210 cm"
-      },
-      "22U1749": {
-        nickname: "Riptide",
-        species: "Blue Shark",
-        size: "185 cm"
-      }
+      "20U0741": { nickname: "Bolt", species: "Shortfin Mako", size: "210 cm" },
+      "22U1749": { nickname: "Riptide", species: "Blue Shark", size: "185 cm" }
     };
 
-    // Initialize map
-    const map = L.map('map').setView([35, -60], 4);
+    const map = L.map("map").setView([38, -70], 5);
 
-    // Add base map tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 18,
-      attribution: '&copy; OpenStreetMap contributors'
+      attribution: "&copy; OpenStreetMap contributors",
     }).addTo(map);
 
-    // Load KMZ file
-    omnivore.kml('sharks.kml')
-      .on('ready', function() {
-        this.eachLayer(function(layer) {
-          const rawName = layer.feature.properties.name || "";
+    omnivore
+      .kml("myles-kml.kml")
+      .on("ready", function () {
+        this.eachLayer(function (layer) {
+          const rawName = layer.feature?.properties?.name || "";
           const shark = sharkInfo[rawName.trim()];
+          const popupContent = shark
+            ? `<strong>${shark.nickname}</strong><br>Species: ${shark.species}<br>Size: ${shark.size}<br>Tag ID: ${rawName}`
+            : `<strong>Tag ID:</strong> ${rawName}`;
 
-          if (shark) {
-            layer.bindPopup(`
-              <strong>${shark.nickname}</strong><br>
-              Species: ${shark.species}<br>
-              Size: ${shark.size}<br>
-              Tag ID: ${rawName}
-            `);
-          } else {
-            layer.bindPopup(`<strong>Tag ID:</strong> ${rawName}`);
-          }
+          layer.bindPopup(popupContent);
         });
-
         map.fitBounds(this.getBounds());
       })
       .addTo(map);
