@@ -2,106 +2,94 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <title>Mako Shark Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mako Shark Tracking Map</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    /* Reset & Base */
-    * {
+    body {
       margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    html, body {
-      height: 100%;
-      font-family: 'Inter', sans-serif;
-      background-color: #e9f3f9;
+      font-family: Arial, sans-serif;
       display: flex;
       flex-direction: column;
+      height: 100vh;
     }
 
-    /* Header */
     header {
-      background-color: #001f3f;
+      background: #001f3f;
       color: white;
       padding: 1rem 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      font-size: 1.25rem;
+      font-weight: bold;
     }
 
-    .logo {
-      font-size: 1.5rem;
-      font-weight: 700;
-    }
-
-    /* Main Content */
-    main {
+    #map {
       flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 1.5rem;
     }
 
-    h1 {
-      font-size: 1.75rem;
-      text-align: center;
-      margin-bottom: 1rem;
-      color: #1a202c;
-    }
-
-    iframe {
-      width: 100%;
-      max-width: 1000px;
-      height: 80vh;
-      border: none;
-      border-radius: 12px;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-    }
-
-    /* Footer */
     footer {
-      background-color: #f8f8f8;
-      color: #555;
       text-align: center;
       padding: 1rem;
+      background: #f0f0f0;
       font-size: 0.9rem;
-    }
-
-    @media (max-width: 768px) {
-      h1 {
-        font-size: 1.25rem;
-        padding: 0 1rem;
-      }
-
-      iframe {
-        height: 65vh;
-      }
-
-      .logo {
-        font-size: 1.2rem;
-      }
     }
   </style>
 </head>
 <body>
-  <header>
-    <div class="logo">Montauk Shark Lab</div>
-  </header>
+  <header>Mako Shark Tracking Map – Montauk Shark Lab</header>
+  <div id="map"></div>
+  <footer>Tracking data provided by Wildlife Computers | Site by Montauk Shark Lab</footer>
 
-  <main>
-    <h1>Mako Shark Tracking Map<br>Presented by the Montauk Shark Lab</h1>
-    <iframe 
-      src="https://my.wildlifecomputers.com/data/map/?id=685a059a196c4d0a280bcf7a" 
-      allowfullscreen>
-    </iframe>
-  </main>
+  <!-- Leaflet -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Omnivore plugin to read KMZ/KML -->
+  <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
 
-  <footer>
-    Tracking data provided by Wildlife Computers | Site by Montauk Shark Lab
-  </footer>
+  <script>
+    // Placeholder shark info – you can edit these later
+    const sharkInfo = {
+      "20U0741": {
+        nickname: "Bolt",
+        species: "Shortfin Mako",
+        size: "210 cm"
+      },
+      "22U1749": {
+        nickname: "Riptide",
+        species: "Blue Shark",
+        size: "185 cm"
+      }
+    };
+
+    // Initialize map
+    const map = L.map('map').setView([35, -60], 4);
+
+    // Add base map tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Load KMZ file
+    omnivore.kml('myles-kmz.kmz')
+      .on('ready', function() {
+        this.eachLayer(function(layer) {
+          const rawName = layer.feature.properties.name || "";
+          const shark = sharkInfo[rawName.trim()];
+
+          if (shark) {
+            layer.bindPopup(`
+              <strong>${shark.nickname}</strong><br>
+              Species: ${shark.species}<br>
+              Size: ${shark.size}<br>
+              Tag ID: ${rawName}
+            `);
+          } else {
+            layer.bindPopup(`<strong>Tag ID:</strong> ${rawName}`);
+          }
+        });
+
+        map.fitBounds(this.getBounds());
+      })
+      .addTo(map);
+  </script>
 </body>
 </html>
