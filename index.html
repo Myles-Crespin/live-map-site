@@ -55,8 +55,8 @@
       attribution: "&copy; OpenStreetMap contributors",
     }).addTo(map);
 
-    omnivore
-      .kml("https://raw.githubusercontent.com/Myles-Crespin/live-map-site/main/myles-kml.kml")
+    omnivore.kml("https://raw.githubusercontent.com/Myles-Crespin/live-map-site/main/myles-kml.kml")
+
       .on("ready", function () {
         this.eachLayer(function (layer) {
           const rawName = layer.feature?.properties?.name || "";
