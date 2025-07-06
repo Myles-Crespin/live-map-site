@@ -32,13 +32,44 @@
       background: #f0f0f0;
       font-size: 0.9rem;
     }
-    .info.legend {
-      background: white;
-      padding: 10px;
-      border-radius: 8px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-      font-size: 14px;
-      line-height: 18px;
-    }
-    .info.legend h4 {
-      margin: 0 0 5px;
+  </style>
+</head>
+<body>
+  <header>Mako Shark Tracking Map – Montauk Shark Lab</header>
+  <div id="map"></div>
+  <footer>Tracking data by Wildlife Computers</footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
+  <script>
+    // Sample shark info - update with real data later
+    const sharkInfo = {
+      "20U0741": { nickname: "Bolt", species: "Shortfin Mako", size: "210 cm" },
+      "22U1749": { nickname: "Riptide", species: "Blue Shark", size: "185 cm" }
+    };
+
+    const map = L.map("map").setView([38, -70], 5);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 18,
+      attribution: "&copy; OpenStreetMap contributors",
+    }).addTo(map);
+
+    omnivore.kml("https://raw.githubusercontent.com/Myles-Crespin/live-map-site/main/myles-kml.kml")
+
+      .on("ready", function () {
+        this.eachLayer(function (layer) {
+          const rawName = layer.feature?.properties?.name || "";
+          const shark = sharkInfo[rawName.trim()];
+          const popupContent = shark
+            ? `<strong>${shark.nickname}</strong><br>Species: ${shark.species}<br>Size: ${shark.size}<br>Tag ID: ${rawName}`
+            : `<strong>Tag ID:</strong> ${rawName}`;
+
+          layer.bindPopup(popupContent);
+        });
+        map.fitBounds(this.getBounds());
+      })
+      .addTo(map);
+  </script>
+</body>
+</html>
