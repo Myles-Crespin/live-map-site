@@ -42,7 +42,6 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
   <script>
-    // Sample shark info - update with real data later
     const sharkInfo = {
       "20U0741": { nickname: "Bolt", species: "Shortfin Mako", size: "210 cm" },
       "22U1749": { nickname: "Riptide", species: "Blue Shark", size: "185 cm" }
@@ -55,8 +54,16 @@
       attribution: "&copy; OpenStreetMap contributors",
     }).addTo(map);
 
-    omnivore.kml("https://raw.githubusercontent.com/Myles-Crespin/live-map-site/main/myles-kml.kml")
+    // Color palette
+    const colors = [
+      "#e6194b", "#3cb44b", "#ffe119", "#4363d8",
+      "#f58231", "#911eb4", "#46f0f0", "#f032e6",
+      "#bcf60c", "#fabebe", "#008080", "#e6beff"
+    ];
 
+    let colorIndex = 0;
+
+    omnivore.kml("https://raw.githubusercontent.com/Myles-Crespin/live-map-site/main/myles-kml.kml")
       .on("ready", function () {
         this.eachLayer(function (layer) {
           const rawName = layer.feature?.properties?.name || "";
@@ -66,7 +73,21 @@
             : `<strong>Tag ID:</strong> ${rawName}`;
 
           layer.bindPopup(popupContent);
+
+          // Assign a unique color
+          const color = colors[colorIndex % colors.length];
+          colorIndex++;
+
+          // Apply the color style (only for LineString-type layers)
+          if (layer.setStyle) {
+            layer.setStyle({
+              color: color,
+              weight: 4,
+              opacity: 0.9
+            });
+          }
         });
+
         map.fitBounds(this.getBounds());
       })
       .addTo(map);
