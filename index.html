@@ -32,6 +32,32 @@
       background: #f0f0f0;
       font-size: 0.9rem;
     }
+    .legend {
+      background: white;
+      padding: 10px;
+      line-height: 1.4em;
+      border-radius: 5px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.3);
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 4px;
+      cursor: pointer;
+    }
+    .legend-color {
+      width: 18px;
+      height: 18px;
+      margin-right: 8px;
+      border: 1px solid #999;
+    }
+    .legend-item.active {
+      font-weight: bold;
+      background-color: #eef;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
@@ -54,7 +80,6 @@
       attribution: "&copy; OpenStreetMap contributors",
     }).addTo(map);
 
-    // Color palette
     const colors = [
       "#e6194b", "#3cb44b", "#ffe119", "#4363d8",
       "#f58231", "#911eb4", "#46f0f0", "#f032e6",
@@ -62,35 +87,71 @@
     ];
 
     let colorIndex = 0;
+    const trackColors = {};  // tagID -> color
+    const trackLayers = {};  // tagID -> L.Layer
+    let activeTagID = null;  // currently focused tag
 
     omnivore.kml("https://raw.githubusercontent.com/Myles-Crespin/live-map-site/main/myles-kml.kml")
       .on("ready", function () {
         this.eachLayer(function (layer) {
           const rawName = layer.feature?.properties?.name || "";
-          const shark = sharkInfo[rawName.trim()];
+          const tagID = rawName.trim();
+
+          if (!trackColors[tagID]) {
+            trackColors[tagID] = colors[colorIndex % colors.length];
+            colorIndex++;
+          }
+
+          const shark = sharkInfo[tagID];
           const popupContent = shark
-            ? `<strong>${shark.nickname}</strong><br>Species: ${shark.species}<br>Size: ${shark.size}<br>Tag ID: ${rawName}`
-            : `<strong>Tag ID:</strong> ${rawName}`;
+            ? `<strong>${shark.nickname}</strong><br>Species: ${shark.species}<br>Size: ${shark.size}<br>Tag ID: ${tagID}`
+            : `<strong>Tag ID:</strong> ${tagID}`;
 
           layer.bindPopup(popupContent);
 
-          // Assign a unique color
-          const color = colors[colorIndex % colors.length];
-          colorIndex++;
-
-          // Apply the color style (only for LineString-type layers)
           if (layer.setStyle) {
             layer.setStyle({
-              color: color,
+              color: trackColors[tagID],
               weight: 4,
               opacity: 0.9
             });
           }
+
+          trackLayers[tagID] = layer;
         });
 
+        addLegend(trackColors);
         map.fitBounds(this.getBounds());
       })
       .addTo(map);
-  </script>
-</body>
-</html>
+
+    function addLegend(colorMap) {
+      const legend = L.control({ position: "bottomright" });
+
+      legend.onAdd = function () {
+        const div = L.DomUtil.create("div", "legend");
+        div.innerHTML = "<strong>Shark Tracks</strong><br>";
+
+        for (const tagID in colorMap) {
+          const shark = sharkInfo[tagID];
+          const label = shark ? `${shark.nickname} (${tagID})` : tagID;
+
+          const item = document.createElement("div");
+          item.className = "legend-item";
+          item.dataset.tagId = tagID;
+
+          item.innerHTML = `
+            <div class="legend-color" style="background:${colorMap[tagID]}"></div>
+            <span>${label}</span>
+          `;
+
+          // Event listener for interactivity
+          item.onclick = function () {
+            if (activeTagID === tagID) {
+              // Deselect
+              for (const id in trackLayers) {
+                map.addLayer(trackLayers[id]);
+              }
+              activeTagID = null;
+              document.querySelectorAll(".legend-item").forEach(el => el.classList.remove("active"));
+              map.fitBounds(L.featureGroup(Object.values(trackLayers)).getBounds());
