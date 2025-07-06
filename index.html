@@ -38,8 +38,6 @@
       line-height: 1.4em;
       border-radius: 5px;
       box-shadow: 0 0 5px rgba(0,0,0,0.3);
-      max-height: 300px;
-      overflow-y: auto;
     }
     .legend-item {
       display: flex;
@@ -73,90 +71,102 @@
       "22U1749": { nickname: "Riptide", species: "Blue Shark", size: "185 cm" }
     };
 
-    const map = L.map("map").setView([38, -70], 5);
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 18,
-      attribution: "&copy; OpenStreetMap contributors",
-    }).addTo(map);
-
     const colors = [
       "#e6194b", "#3cb44b", "#ffe119", "#4363d8",
       "#f58231", "#911eb4", "#46f0f0", "#f032e6",
       "#bcf60c", "#fabebe", "#008080", "#e6beff"
     ];
 
-    let colorIndex = 0;
-    const trackColors = {};  // tagID -> color
-    const trackLayers = {};  // tagID -> L.Layer
-    let activeTagID = null;  // currently focused tag
+    const map = L.map("map").setView([38, -70], 5);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 18,
+      attribution: "&copy; OpenStreetMap contributors",
+    }).addTo(map);
 
+    const trackLayers = {};
+    const colorMap = {};
+    let activeTagID = null;
+
+    // Load full KML and manually group features
     omnivore.kml("https://raw.githubusercontent.com/Myles-Crespin/live-map-site/main/myles-kml.kml")
       .on("ready", function () {
-        this.eachLayer(function (layer) {
-          const rawName = layer.feature?.properties?.name || "";
-          const tagID = rawName.trim();
+        const features = [];
 
-          if (!trackColors[tagID]) {
-            trackColors[tagID] = colors[colorIndex % colors.length];
-            colorIndex++;
+        this.eachLayer(layer => {
+          if (layer.feature && layer.feature.geometry.type === "Point") {
+            features.push(layer.feature);
           }
-
-          const shark = sharkInfo[tagID];
-          const popupContent = shark
-            ? `<strong>${shark.nickname}</strong><br>Species: ${shark.species}<br>Size: ${shark.size}<br>Tag ID: ${tagID}`
-            : `<strong>Tag ID:</strong> ${tagID}`;
-
-          layer.bindPopup(popupContent);
-
-          if (layer.setStyle) {
-            layer.setStyle({
-              color: trackColors[tagID],
-              weight: 4,
-              opacity: 0.9
-            });
-          }
-
-          trackLayers[tagID] = layer;
         });
 
-        addLegend(trackColors);
-        map.fitBounds(this.getBounds());
-      })
-      .addTo(map);
+        // Group points by tag ID (assuming tag ID is part of folder/name path)
+        const grouped = {};
+        features.forEach(f => {
+          const name = f.properties.name || "";
+          const tagMatch = name.match(/\b[0-9]{2}U[0-9]{4}\b/);
+          const tagID = tagMatch ? tagMatch[0] : "unknown";
 
-    function addLegend(colorMap) {
+          if (!grouped[tagID]) grouped[tagID] = [];
+          grouped[tagID].push(f);
+        });
+
+        let colorIndex = 0;
+        for (const tagID in grouped) {
+          const color = colors[colorIndex % colors.length];
+          colorMap[tagID] = color;
+          colorIndex++;
+
+          // Sort points by timestamp if available (optional)
+          const coords = grouped[tagID].map(f => f.geometry.coordinates.slice().reverse());
+
+          const polyline = L.polyline(coords, {
+            color,
+            weight: 4,
+            opacity: 0.9
+          });
+
+          const shark = sharkInfo[tagID];
+          polyline.bindPopup(
+            shark
+              ? `<strong>${shark.nickname}</strong><br>Species: ${shark.species}<br>Size: ${shark.size}<br>Tag ID: ${tagID}`
+              : `<strong>Tag ID:</strong> ${tagID}`
+          );
+
+          trackLayers[tagID] = polyline;
+          polyline.addTo(map);
+        }
+
+        addLegend();
+        const allBounds = L.featureGroup(Object.values(trackLayers)).getBounds();
+        map.fitBounds(allBounds);
+      });
+
+    function addLegend() {
       const legend = L.control({ position: "bottomright" });
-
       legend.onAdd = function () {
         const div = L.DomUtil.create("div", "legend");
         div.innerHTML = "<strong>Shark Tracks</strong><br>";
 
-        for (const tagID in colorMap) {
+        Object.keys(trackLayers).forEach(tagID => {
+          const color = colorMap[tagID];
           const shark = sharkInfo[tagID];
           const label = shark ? `${shark.nickname} (${tagID})` : tagID;
 
           const item = document.createElement("div");
           item.className = "legend-item";
           item.dataset.tagId = tagID;
-
           item.innerHTML = `
-            <div class="legend-color" style="background:${colorMap[tagID]}"></div>
+            <div class="legend-color" style="background:${color}"></div>
             <span>${label}</span>
           `;
-
-          // Event listener for interactivity
           item.onclick = function () {
             if (activeTagID === tagID) {
-              // Deselect
-              for (const id in trackLayers) {
-                map.addLayer(trackLayers[id]);
-              }
+              // Show all
+              Object.values(trackLayers).forEach(layer => map.addLayer(layer));
               activeTagID = null;
               document.querySelectorAll(".legend-item").forEach(el => el.classList.remove("active"));
               map.fitBounds(L.featureGroup(Object.values(trackLayers)).getBounds());
             } else {
-              // Select this track
+              // Show only selected
               for (const id in trackLayers) {
                 if (id === tagID) {
                   map.addLayer(trackLayers[id]);
@@ -170,13 +180,11 @@
               map.fitBounds(trackLayers[tagID].getBounds());
             }
           };
-
           div.appendChild(item);
-        }
+        });
 
         return div;
       };
-
       legend.addTo(map);
     }
   </script>
