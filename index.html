@@ -155,3 +155,30 @@
               activeTagID = null;
               document.querySelectorAll(".legend-item").forEach(el => el.classList.remove("active"));
               map.fitBounds(L.featureGroup(Object.values(trackLayers)).getBounds());
+            } else {
+              // Select this track
+              for (const id in trackLayers) {
+                if (id === tagID) {
+                  map.addLayer(trackLayers[id]);
+                } else {
+                  map.removeLayer(trackLayers[id]);
+                }
+              }
+              activeTagID = tagID;
+              document.querySelectorAll(".legend-item").forEach(el => el.classList.remove("active"));
+              item.classList.add("active");
+              map.fitBounds(trackLayers[tagID].getBounds());
+            }
+          };
+
+          div.appendChild(item);
+        }
+
+        return div;
+      };
+
+      legend.addTo(map);
+    }
+  </script>
+</body>
+</html>
