@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Mako Shark Tracking Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     body {
       margin: 0;
@@ -31,27 +31,58 @@
     }
     .legend {
       background: white;
-      padding: 10px;
-      line-height: 1.4em;
-      border-radius: 5px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.3);
+      padding: 12px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      font-size: 14px;
+      width: 220px;
+    }
+    .legend-header {
+      font-weight: bold;
+      margin-bottom: 10px;
+      font-size: 16px;
+      text-align: center;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 6px;
+    }
+    .legend-button {
+      background: #0074D9;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 13px;
+      margin: 8px 0 12px 0;
+      display: block;
+      width: 100%;
+      text-align: center;
+      transition: background 0.2s ease;
+    }
+    .legend-button:hover {
+      background: #005fa3;
     }
     .legend-item {
       display: flex;
       align-items: center;
-      margin-bottom: 4px;
+      padding: 5px;
+      border-radius: 4px;
       cursor: pointer;
+      transition: background 0.2s;
     }
-    .legend-color {
-      width: 18px;
-      height: 18px;
-      margin-right: 8px;
-      border: 1px solid #999;
+    .legend-item:hover {
+      background: #f4f4f4;
     }
     .legend-item.active {
+      background: #e6f0ff;
       font-weight: bold;
-      background-color: #eef;
-      border-radius: 4px;
+    }
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      margin-right: 8px;
+      border-radius: 3px;
+      border: 1px solid #888;
     }
   </style>
 </head>
@@ -78,7 +109,7 @@
     const map = L.map("map").setView([38, -70], 5);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 18,
-      attribution: "&copy; OpenStreetMap contributors"
+      attribution: "&copy; OpenStreetMap contributors",
     }).addTo(map);
 
     const trackLayers = {};
@@ -164,7 +195,10 @@
       const legend = L.control({ position: "bottomright" });
       legend.onAdd = function () {
         const div = L.DomUtil.create("div", "legend");
-        div.innerHTML = "<strong>Shark Tracks</strong><br>";
+        div.innerHTML = `
+          <div class="legend-header">Shark Tracks</div>
+          <button class="legend-button" id="see-all">See All</button>
+        `;
 
         Object.keys(trackLayers).forEach(tagID => {
           const color = colorMap[tagID];
@@ -178,18 +212,11 @@
             <div class="legend-color" style="background:${color}"></div>
             <span>${label}</span>
           `;
+
           item.onclick = function () {
             if (activeTagID === tagID) {
-              // Show all tracks and markers
-              for (const id in trackLayers) {
-                map.addLayer(trackLayers[id]);
-                map.addLayer(markerGroups[id]);
-              }
-              activeTagID = null;
-              document.querySelectorAll(".legend-item").forEach(el => el.classList.remove("active"));
-              map.fitBounds(L.featureGroup(Object.values(trackLayers)).getBounds());
+              showAllTracks();
             } else {
-              // Show only selected
               for (const id in trackLayers) {
                 if (id === tagID) {
                   map.addLayer(trackLayers[id]);
@@ -205,12 +232,30 @@
               map.fitBounds(trackLayers[tagID].getBounds());
             }
           };
+
           div.appendChild(item);
         });
+
+        setTimeout(() => {
+          document.getElementById("see-all").onclick = showAllTracks;
+        }, 0);
 
         return div;
       };
       legend.addTo(map);
+    }
+
+    function showAllTracks() {
+      for (const id in trackLayers) {
+        map.addLayer(trackLayers[id]);
+        map.addLayer(markerGroups[id]);
+      }
+      activeTagID = null;
+      document.querySelectorAll(".legend-item").forEach(el => el.classList.remove("active"));
+      const allItems = Object.values(trackLayers);
+      if (allItems.length > 0) {
+        map.fitBounds(L.featureGroup(allItems).getBounds());
+      }
     }
   </script>
 </body>
