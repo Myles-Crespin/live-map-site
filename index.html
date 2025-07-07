@@ -41,13 +41,11 @@
       overflow-y: auto;
       transition: max-height 0.3s ease;
     }
-
     .legend.collapsed {
       max-height: 0;
       overflow: hidden;
       padding: 0 12px;
     }
-
     .legend-header {
       font-weight: bold;
       font-size: 16px;
@@ -56,7 +54,6 @@
       padding-bottom: 6px;
       margin-bottom: 8px;
     }
-
     .legend-button {
       background: #0074D9;
       color: white;
@@ -74,7 +71,6 @@
     .legend-button:hover {
       background: #005fa3;
     }
-
     .legend-item {
       display: flex;
       align-items: center;
@@ -109,14 +105,12 @@
     .legend-text .name {
       font-weight: 600;
     }
-
     .toggle-legend {
       position: absolute;
       bottom: 10px;
       right: 10px;
       z-index: 1001;
     }
-
     @media (max-width: 600px) {
       .legend {
         position: absolute !important;
@@ -174,6 +168,13 @@
     const colorMap = {};
     let activeTagID = null;
 
+    function getResponsiveDotRadius() {
+      const w = window.innerWidth;
+      if (w < 500) return 3.5;
+      if (w < 800) return 4.5;
+      return 6;
+    }
+
     omnivore.kml("https://raw.githubusercontent.com/Myles-Crespin/live-map-site/main/myles-kml.kml")
       .on("ready", function () {
         const pointsByTag = {};
@@ -206,9 +207,7 @@
           colorMap[tagID] = color;
           colorIndex++;
 
-          const sortedPoints = pointsByTag[tagID]
-            .sort((a, b) => new Date(a.t) - new Date(b.t));
-
+          const sortedPoints = pointsByTag[tagID].sort((a, b) => new Date(a.t) - new Date(b.t));
           const latlngs = sortedPoints.map(p => p.coords);
 
           const polyline = L.polyline(latlngs, {
@@ -225,10 +224,11 @@
           );
 
           const markerGroup = L.layerGroup();
+          const radius = getResponsiveDotRadius();
           sortedPoints.forEach(p => {
             const popupText = `Ping Date: ${new Date(p.t).toLocaleString()}`;
-            L.circleMarker(p.coords, {
-              radius: 6,
+            const dot = L.circleMarker(p.coords, {
+              radius,
               color,
               fillColor: color,
               fillOpacity: 0.4,
@@ -236,8 +236,8 @@
               opacity: 0.7,
               interactive: true
             })
-            .bindPopup(popupText)
-            .addTo(markerGroup);
+              .bindPopup(popupText)
+              .addTo(markerGroup);
           });
 
           trackLayers[tagID] = polyline;
@@ -258,7 +258,6 @@
       legendControl.onAdd = function () {
         const div = L.DomUtil.create("div", "legend");
         div.id = "legend";
-
         div.innerHTML = `
           <div class="legend-header">Shark Tracks</div>
           <button class="legend-button" id="see-all">See All</button>
@@ -267,9 +266,7 @@
         Object.keys(trackLayers).forEach(tagID => {
           const color = colorMap[tagID];
           const shark = sharkInfo[tagID];
-          const label = shark
-            ? `${shark.species} | Size: ${shark.size}`
-            : tagID;
+          const label = shark ? `${shark.species} | Size: ${shark.size}` : tagID;
 
           const item = document.createElement("div");
           item.className = "legend-item";
@@ -310,7 +307,6 @@
       };
       legendControl.addTo(map);
 
-      // Add collapsible toggle button
       const toggleBtn = L.DomUtil.create("button", "legend-button toggle-legend");
       toggleBtn.textContent = "Toggle Legend";
       toggleBtn.onclick = () => {
@@ -332,6 +328,16 @@
         map.fitBounds(L.featureGroup(allItems).getBounds());
       }
     }
+
+    // Resize handler to update dot radius
+    window.addEventListener("resize", () => {
+      const radius = getResponsiveDotRadius();
+      Object.values(markerGroups).forEach(group => {
+        group.eachLayer(marker => {
+          if (marker.setRadius) marker.setRadius(radius);
+        });
+      });
+    });
   </script>
 </body>
 </html>
