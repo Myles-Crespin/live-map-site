@@ -36,7 +36,7 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.25);
       font-size: 14px;
       width: 260px;
-      max-height: 320px;
+      max-height: 350px;
       overflow-y: auto;
     }
     .legend-header {
@@ -112,19 +112,18 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
   <script>
-    // Updated sharkInfo with all tags, showing species, sex, size, date tagged (only species, sex, size shown in legend)
     const sharkInfo = {
-      "20U0741": { serial: "221696", species: "Shortfin Mako", sex: "M", size: "86 cm", dateTagged: "16 August 2021" },
-      "22U1749": { serial: "236167", species: "Shortfin Mako", sex: "M", size: "112 cm", dateTagged: "3 August 2022" },
-      "22U1796": { serial: "236168", species: "Shortfin Mako", sex: "F", size: "103 cm", dateTagged: "10 September 2022" },
-      "22U1799": { serial: "236169", species: "Shortfin Mako", sex: "M", size: "85 cm", dateTagged: "11 September 2022" },
-      "23U1667": { serial: "244873", species: "Shortfin Mako", sex: "F", size: "106 cm", dateTagged: "31 July 2023" },
-      "23U1668": { serial: "244874", species: "Shortfin Mako", sex: "F", size: "116 cm", dateTagged: "31 July 2023" },
-      "22U2277": { serial: "244875", species: "Shortfin Mako", sex: "F", size: "109 cm", dateTagged: "31 July 2023" },
-      "23U1990": { serial: "252483", species: "Shortfin Mako", sex: "M", size: "97 cm", dateTagged: "9 September 2023" },
-      "23U1991": { serial: "253406", species: "Shortfin Mako", sex: "?", size: "Unknown", dateTagged: "6 March 2025" },
-      "24U2942": { serial: "266849", species: "Shortfin Mako", sex: "F", size: "160 cm", dateTagged: "3 October 2024" },
-      "24U2943": { serial: "266850", species: "Shortfin Mako", sex: "F", size: "Unknown", dateTagged: "25 July 2024" }
+      "20U0741": { serial: "221696", species: "Shortfin Mako", size: "86 cm", dateTagged: "16 August 2021" },
+      "22U1749": { serial: "236167", species: "Shortfin Mako", size: "112 cm", dateTagged: "3 August 2022" },
+      "22U1796": { serial: "236168", species: "Shortfin Mako", size: "103 cm", dateTagged: "10 September 2022" },
+      "22U1799": { serial: "236169", species: "Shortfin Mako", size: "85 cm", dateTagged: "11 September 2022" },
+      "23U1667": { serial: "244873", species: "Shortfin Mako", size: "106 cm", dateTagged: "31 July 2023" },
+      "23U1668": { serial: "244874", species: "Shortfin Mako", size: "116 cm", dateTagged: "31 July 2023" },
+      "22U2277": { serial: "244875", species: "Shortfin Mako", size: "109 cm", dateTagged: "31 July 2023" },
+      "23U1990": { serial: "252483", species: "Shortfin Mako", size: "97 cm", dateTagged: "9 September 2023" },
+      "23U1991": { serial: "253406", species: "Shortfin Mako", size: "Unknown", dateTagged: "6 March 2025" },
+      "24U2942": { serial: "266849", species: "Shortfin Mako", size: "160 cm", dateTagged: "3 October 2024" },
+      "24U2943": { serial: "266850", species: "Shortfin Mako", size: "Unknown", dateTagged: "25 July 2024" }
     };
 
     const colors = [
@@ -134,9 +133,9 @@
     ];
 
     const map = L.map("map").setView([38, -70], 5);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    L.tileLayer("https://stamen-tiles.a.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg", {
       maxZoom: 18,
-      attribution: "&copy; OpenStreetMap contributors",
+      attribution: "Map tiles by Stamen Design, CC BY 3.0 — Map data © OpenStreetMap contributors",
     }).addTo(map);
 
     const trackLayers = {};
@@ -190,7 +189,7 @@
           const shark = sharkInfo[tagID];
           polyline.bindPopup(
             shark
-              ? `<strong>Species:</strong> ${shark.species}<br><strong>Sex:</strong> ${shark.sex}<br><strong>Size:</strong> ${shark.size}<br><strong>Tag ID:</strong> ${tagID}`
+              ? `<strong>Species:</strong> ${shark.species}<br><strong>Size:</strong> ${shark.size}<br><strong>Tag ID:</strong> ${tagID}`
               : `<strong>Tag ID:</strong> ${tagID}`
           );
 
@@ -231,7 +230,7 @@
           const color = colorMap[tagID];
           const shark = sharkInfo[tagID];
           const label = shark
-            ? `${shark.species} | Sex: ${shark.sex} | Size: ${shark.size}`
+            ? `${shark.species} | Size: ${shark.size}`
             : tagID;
 
           const item = document.createElement("div");
