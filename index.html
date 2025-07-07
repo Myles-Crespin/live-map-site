@@ -101,7 +101,15 @@
         if (!tagMatch) return;
 
         const tagID = tagMatch[0];
-        const coords = f.geometry.coordinates.slice().reverse(); // [lat, lng]
+
+        let coords;
+        if (f.geometry.type === "Point") {
+          // Convert from [lon, lat] → [lat, lon]
+          coords = [f.geometry.coordinates[1], f.geometry.coordinates[0]];
+        } else {
+          console.warn(`Unsupported geometry type: ${f.geometry.type}`);
+          return;
+        }
 
         if (!pointsByTag[tagID]) pointsByTag[tagID] = [];
         pointsByTag[tagID].push({ coords, timestamp: props.Start || rawName });
