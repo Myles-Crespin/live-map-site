@@ -35,7 +35,9 @@
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.25);
       font-size: 14px;
-      width: 220px;
+      width: 260px;
+      max-height: 320px;
+      overflow-y: auto;
     }
     .legend-header {
       font-weight: bold;
@@ -65,10 +67,11 @@
     .legend-item {
       display: flex;
       align-items: center;
-      padding: 5px;
+      padding: 6px 8px;
       border-radius: 4px;
       cursor: pointer;
       transition: background 0.2s;
+      user-select: none;
     }
     .legend-item:hover {
       background: #f4f4f4;
@@ -83,6 +86,21 @@
       margin-right: 8px;
       border-radius: 3px;
       border: 1px solid #888;
+      flex-shrink: 0;
+    }
+    .legend-text {
+      display: flex;
+      flex-direction: column;
+      font-size: 13px;
+      line-height: 1.2;
+      color: #333;
+    }
+    .legend-text .name {
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    .legend-text .details {
+      color: #555;
     }
   </style>
 </head>
@@ -94,10 +112,19 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
   <script>
+    // Updated sharkInfo with all tags, showing species, sex, size, date tagged (only species, sex, size shown in legend)
     const sharkInfo = {
-      "20U0741": { nickname: "Bolt", species: "Shortfin Mako", size: "210 cm" },
-      "22U1749": { nickname: "Riptide", species: "Blue Shark", size: "185 cm" },
-      "24U2943": { nickname: "Newcomer", species: "Mako", size: "200 cm" }
+      "20U0741": { serial: "221696", species: "Shortfin Mako", sex: "M", size: "86 cm", dateTagged: "16 August 2021" },
+      "22U1749": { serial: "236167", species: "Shortfin Mako", sex: "M", size: "112 cm", dateTagged: "3 August 2022" },
+      "22U1796": { serial: "236168", species: "Shortfin Mako", sex: "F", size: "103 cm", dateTagged: "10 September 2022" },
+      "22U1799": { serial: "236169", species: "Shortfin Mako", sex: "M", size: "85 cm", dateTagged: "11 September 2022" },
+      "23U1667": { serial: "244873", species: "Shortfin Mako", sex: "F", size: "106 cm", dateTagged: "31 July 2023" },
+      "23U1668": { serial: "244874", species: "Shortfin Mako", sex: "F", size: "116 cm", dateTagged: "31 July 2023" },
+      "22U2277": { serial: "244875", species: "Shortfin Mako", sex: "F", size: "109 cm", dateTagged: "31 July 2023" },
+      "23U1990": { serial: "252483", species: "Shortfin Mako", sex: "M", size: "97 cm", dateTagged: "9 September 2023" },
+      "23U1991": { serial: "253406", species: "Shortfin Mako", sex: "?", size: "Unknown", dateTagged: "6 March 2025" },
+      "24U2942": { serial: "266849", species: "Shortfin Mako", sex: "F", size: "160 cm", dateTagged: "3 October 2024" },
+      "24U2943": { serial: "266850", species: "Shortfin Mako", sex: "F", size: "Unknown", dateTagged: "25 July 2024" }
     };
 
     const colors = [
@@ -163,13 +190,13 @@
           const shark = sharkInfo[tagID];
           polyline.bindPopup(
             shark
-              ? `<strong>${shark.nickname}</strong><br>Species: ${shark.species}<br>Size: ${shark.size}<br>Tag ID: ${tagID}`
+              ? `<strong>Species:</strong> ${shark.species}<br><strong>Sex:</strong> ${shark.sex}<br><strong>Size:</strong> ${shark.size}<br><strong>Tag ID:</strong> ${tagID}`
               : `<strong>Tag ID:</strong> ${tagID}`
           );
 
           const markerGroup = L.layerGroup();
           sortedPoints.forEach(p => {
-            const dot = L.circleMarker(p.coords, {
+            L.circleMarker(p.coords, {
               radius: 4,
               color,
               fillColor: color,
@@ -203,14 +230,18 @@
         Object.keys(trackLayers).forEach(tagID => {
           const color = colorMap[tagID];
           const shark = sharkInfo[tagID];
-          const label = shark ? `${shark.nickname} (${tagID})` : tagID;
+          const label = shark
+            ? `${shark.species} | Sex: ${shark.sex} | Size: ${shark.size}`
+            : tagID;
 
           const item = document.createElement("div");
           item.className = "legend-item";
           item.dataset.tagId = tagID;
           item.innerHTML = `
             <div class="legend-color" style="background:${color}"></div>
-            <span>${label}</span>
+            <div class="legend-text">
+              <div class="name">${label}</div>
+            </div>
           `;
 
           item.onclick = function () {
