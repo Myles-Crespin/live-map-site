@@ -192,13 +192,16 @@
 
           const markerGroup = L.layerGroup();
           sortedPoints.forEach(p => {
+            const popupText = `Ping Date: ${new Date(p.t).toLocaleString()}`;
             L.circleMarker(p.coords, {
               radius: 4,
               color,
               fillColor: color,
               fillOpacity: 0.8,
               weight: 1
-            }).addTo(markerGroup);
+            })
+            .bindPopup(popupText)
+            .addTo(markerGroup);
           });
 
           trackLayers[tagID] = polyline;
