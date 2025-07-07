@@ -4,10 +4,7 @@
   <meta charset="UTF-8" />
   <title>Mako Shark Tracking Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <style>
     body {
       margin: 0;
@@ -81,10 +78,11 @@
     const map = L.map("map").setView([38, -70], 5);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 18,
-      attribution: "&copy; OpenStreetMap contributors",
+      attribution: "&copy; OpenStreetMap contributors"
     }).addTo(map);
 
     const trackLayers = {};
+    const markerGroups = {};
     const colorMap = {};
     let activeTagID = null;
 
@@ -94,30 +92,24 @@
 
         this.eachLayer(layer => {
           const f = layer.feature;
-          const props = f?.properties || {};
+          if (!f || !f.geometry) return;
+          const props = f.properties || {};
           const rawName = props.Name || props.name || "";
 
-          const tagMatch = rawName.match(/\b[0-9]{2}U[0-9]{4}\b/);
-          if (!tagMatch) return;
+          const match = rawName.match(/\b[0-9]{2}U[0-9]{4}\b/);
+          if (!match) return;
+          const tagID = match[0];
 
-          const tagID = tagMatch[0];
-
-          let newPoints = [];
+          if (!pointsByTag[tagID]) pointsByTag[tagID] = [];
 
           if (f.geometry.type === "Point") {
-            const coord = f.geometry.coordinates;
-            newPoints.push([coord[1], coord[0]]);
+            const [lon, lat] = f.geometry.coordinates;
+            pointsByTag[tagID].push({ coords: [lat, lon], t: props.Start || rawName });
           } else if (f.geometry.type === "LineString") {
-            newPoints = f.geometry.coordinates.map(coord => [coord[1], coord[0]]);
-          } else {
-            console.warn(`Unsupported geometry type: ${f.geometry.type}`);
-            return;
+            f.geometry.coordinates.forEach(([lon, lat]) => {
+              pointsByTag[tagID].push({ coords: [lat, lon], t: props.Start || rawName });
+            });
           }
-
-          newPoints.forEach(pt => {
-            if (!pointsByTag[tagID]) pointsByTag[tagID] = [];
-            pointsByTag[tagID].push({ coords: pt, timestamp: props.Start || rawName });
-          });
         });
 
         let colorIndex = 0;
@@ -126,9 +118,10 @@
           colorMap[tagID] = color;
           colorIndex++;
 
-          const latlngs = pointsByTag[tagID]
-            .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
-            .map(p => p.coords);
+          const sortedPoints = pointsByTag[tagID]
+            .sort((a, b) => new Date(a.t) - new Date(b.t));
+
+          const latlngs = sortedPoints.map(p => p.coords);
 
           const polyline = L.polyline(latlngs, {
             color,
@@ -143,12 +136,27 @@
               : `<strong>Tag ID:</strong> ${tagID}`
           );
 
+          const markerGroup = L.layerGroup();
+          sortedPoints.forEach(p => {
+            const dot = L.circleMarker(p.coords, {
+              radius: 4,
+              color,
+              fillColor: color,
+              fillOpacity: 0.8,
+              weight: 1
+            }).addTo(markerGroup);
+          });
+
           trackLayers[tagID] = polyline;
+          markerGroups[tagID] = markerGroup;
+
           polyline.addTo(map);
+          markerGroup.addTo(map);
         }
 
         addLegend();
-        const bounds = L.featureGroup(Object.values(trackLayers)).getBounds();
+        const allItems = Object.values(trackLayers).concat(Object.values(markerGroups));
+        const bounds = L.featureGroup(allItems).getBounds();
         map.fitBounds(bounds);
       });
 
@@ -172,14 +180,24 @@
           `;
           item.onclick = function () {
             if (activeTagID === tagID) {
-              Object.values(trackLayers).forEach(l => map.addLayer(l));
+              // Show all tracks and markers
+              for (const id in trackLayers) {
+                map.addLayer(trackLayers[id]);
+                map.addLayer(markerGroups[id]);
+              }
               activeTagID = null;
               document.querySelectorAll(".legend-item").forEach(el => el.classList.remove("active"));
               map.fitBounds(L.featureGroup(Object.values(trackLayers)).getBounds());
             } else {
+              // Show only selected
               for (const id in trackLayers) {
-                if (id === tagID) map.addLayer(trackLayers[id]);
-                else map.removeLayer(trackLayers[id]);
+                if (id === tagID) {
+                  map.addLayer(trackLayers[id]);
+                  map.addLayer(markerGroups[id]);
+                } else {
+                  map.removeLayer(trackLayers[id]);
+                  map.removeLayer(markerGroups[id]);
+                }
               }
               activeTagID = tagID;
               document.querySelectorAll(".legend-item").forEach(el => el.classList.remove("active"));
