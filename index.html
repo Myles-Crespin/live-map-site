@@ -186,20 +186,19 @@ function formatDateString(dateString) {
   });
 }
 
-// Extract timestamp from a single layer (Placemark)
+// Extract timestamp from Placemark reliably
 function extractTimestamp(layer) {
-  const props = layer.feature.properties || {};
-  // Look inside ExtendedData.Data
-  if (props.ExtendedData && Array.isArray(props.ExtendedData.Data)) {
-    for (const entry of props.ExtendedData.Data) {
-      if (entry.name === "LocationDate" && entry.value) {
-        return entry.value;
+  try {
+    // Use the raw KML feature if available
+    const data = layer._kmlFeature?.ExtendedData?.Data;
+    if (Array.isArray(data)) {
+      for (const entry of data) {
+        if (entry.name === "LocationDate" && entry.value) return entry.value;
       }
     }
-  }
-  // fallback
-  if (props.name) return props.name;
-  if (props.Start) return props.Start;
+    // fallback to Placemark's name
+    if (layer.feature?.name) return layer.feature.name;
+  } catch (e) { /* fail silently */ }
   return "Unknown";
 }
 
@@ -210,8 +209,7 @@ omnivore.kml("https://raw.githubusercontent.com/Myles-Crespin/live-map-site/main
     this.eachLayer(layer => {
       const f = layer.feature;
       if (!f || !f.geometry) return;
-      const props = f.properties || {};
-      const rawName = props.Name || props.name || "";
+      const rawName = f.properties?.Name || f.properties?.name || "";
       const match = rawName.match(/\b[0-9]{2}U[0-9]{4}\b/);
       if (!match) return;
       const tagID = match[0];
@@ -229,7 +227,7 @@ omnivore.kml("https://raw.githubusercontent.com/Myles-Crespin/live-map-site/main
       }
     });
 
-    // Build tracks
+    // Build tracks and markers
     let colorIndex = 0;
     for (const tagID in pointsByTag) {
       const color = colors[colorIndex % colors.length];
