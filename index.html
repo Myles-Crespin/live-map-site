@@ -186,19 +186,11 @@ function formatDateString(dateString) {
   });
 }
 
-// Extract timestamp from Placemark reliably
+// Extract timestamp correctly using Omnivore-parsed properties
 function extractTimestamp(layer) {
-  try {
-    // Use the raw KML feature if available
-    const data = layer._kmlFeature?.ExtendedData?.Data;
-    if (Array.isArray(data)) {
-      for (const entry of data) {
-        if (entry.name === "LocationDate" && entry.value) return entry.value;
-      }
-    }
-    // fallback to Placemark's name
-    if (layer.feature?.name) return layer.feature.name;
-  } catch (e) { /* fail silently */ }
+  const props = layer.feature?.properties || {};
+  if (props.LocationDate) return props.LocationDate;
+  if (props.name) return props.name;
   return "Unknown";
 }
 
