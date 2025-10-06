@@ -174,7 +174,6 @@ function getResponsiveDotRadius() {
   return 6;
 }
 
-// Format date nicely
 function formatDateString(dateString) {
   if (!dateString) return "Unknown Date";
   const normalized = dateString.replace(/(\d{2})-(\w{3})-(\d{4})/, "$2 $1, $3").replace("  ", " ");
@@ -186,14 +185,12 @@ function formatDateString(dateString) {
   });
 }
 
-// Load KML via fetch and convert to GeoJSON using togeojson
 async function loadKML(url) {
   const res = await fetch(url);
   const kmlText = await res.text();
   const parser = new DOMParser();
   const kmlDoc = parser.parseFromString(kmlText, "application/xml");
-  const geojson = toGeoJSON.kml(kmlDoc);
-  return geojson;
+  return toGeoJSON.kml(kmlDoc);
 }
 
 async function initMap() {
@@ -204,22 +201,19 @@ async function initMap() {
   geojson.features.forEach(f => {
     if (!f.geometry) return;
 
-    // Extract tag ID from name
     const rawName = f.properties?.name || "";
     const match = rawName.match(/\b[0-9]{2}U[0-9]{4}\b/);
     if (!match) return;
     const tagID = match[0];
     if (!pointsByTag[tagID]) pointsByTag[tagID] = [];
 
-    // Extract timestamp from ExtendedData / properties
     const timestamp = f.properties?.LocationDate || f.properties?.name || "Unknown";
 
     if (f.geometry.type === "Point") {
       pointsByTag[tagID].push({ coords: [f.geometry.coordinates[1], f.geometry.coordinates[0]], t: timestamp });
     } else if (f.geometry.type === "LineString") {
-      f.geometry.coordinates.forEach(([lon, lat]) => {
-        pointsByTag[tagID].push({ coords: [lat, lon], t: timestamp });
-      });
+      const latlngs = f.geometry.coordinates.map(([lon, lat]) => [lat, lon]);
+      latlngs.forEach(latlng => pointsByTag[tagID].push({ coords: latlng, t: timestamp }));
     }
   });
 
@@ -243,7 +237,9 @@ async function initMap() {
     const markerGroup = L.layerGroup();
     const radius = getResponsiveDotRadius();
     sortedPoints.forEach(p => {
-      const popupText = `<strong>Ping Date:</strong> ${formatDateString(p.t)}`;
+      const popupText = `<strong>Ping Date:</strong> ${formatDateString(p.t)}
+                         <br><strong>Lat:</strong> ${p.coords[0].toFixed(4)}
+                         <br><strong>Lon:</strong> ${p.coords[1].toFixed(4)}`;
       L.circleMarker(p.coords, {
         radius, color, fillColor: color,
         fillOpacity: 0.4, weight: 1, opacity: 0.7, interactive: true
@@ -312,7 +308,6 @@ function showAllTracks() {
   if (allItems.length > 0) map.fitBounds(L.featureGroup(allItems).getBounds());
 }
 
-// Resize handler for dot radius
 window.addEventListener("resize", () => {
   const radius = getResponsiveDotRadius();
   Object.values(markerGroups).forEach(group => {
@@ -320,8 +315,8 @@ window.addEventListener("resize", () => {
   });
 });
 
-// Initialize the map
 initMap();
 </script>
+
 </body>
 </html>
